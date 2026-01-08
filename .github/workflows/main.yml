@@ -1,4 +1,4 @@
-name: Ultimate APK Fixer
+name: Absolute Final Build
 on: [push]
 jobs:
   build:
@@ -15,26 +15,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Build All Variants
+      - name: Force Master Build
         run: |
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           cd $PROJECT_DIR
           chmod +x gradlew
-          
-          # تنظيف وبناء شامل لكل الصيغ الممكنة (APK و AAB)
           ./gradlew assembleDebug --no-daemon || true
-          ./gradlew build --no-daemon || true
           
-          # إنشاء مجلد لتجميع كل النتائج في مكان واحد سهل الوصول
-          mkdir -p $GITHUB_WORKSPACE/output_files
-          find . -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/output_files/ \;
-          find . -name "*.aab" -exec cp {} $GITHUB_WORKSPACE/output_files/ \;
-
-      - name: Upload Everything Found
+      - name: Global APK Search and Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Keyboard-Package-Files
-          path: output_files/ # سنرفع المجلد بالكامل بما يحتويه
-          if-no-files-found: warn
+          name: My-Final-Keyboard
+          # السر هنا: النجمتين تعني ابحث في كل مكان مهما كان المجلد عميقاً
+          path: "**/*.apk"
+          if-no-files-found: error
 
