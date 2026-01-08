@@ -1,4 +1,4 @@
-name: Ultimate Build Fix
+name: Production Build APK
 on: [push]
 jobs:
   build:
@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Unzip safely
+      - name: Unzip project
         run: unzip -o *.zip
         
       - name: Set up JDK 17
@@ -16,23 +16,23 @@ jobs:
           distribution: 'temurin'
           cache: gradle
           
-      - name: Build APK
+      - name: Auto-Fix and Build
         run: |
-          # البحث عن ملف gradlew والدخول لمجلده
+          # البحث عن مجلد المشروع
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           chmod +x $GRADLEW_PATH
           cd $PROJECT_DIR
           
-          # مسح أي محاولات تعديل سابقة في ملفات الإعدادات قد تسبب تعارضاً
-          sed -i '/repositoriesMode/d' settings.gradle || true
+          # حذف السطر الذي يسبب التعارض في الإعدادات تلقائياً
+          sed -i '/repositoriesMode.set/d' settings.gradle || true
           
-          # تشغيل البناء وتجاهل مشاكل Kotlin الخارجية عبر استخدام المكتبات المحلية فقط
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          # تشغيل البناء النهائي
+          ./gradlew assembleDebug --no-daemon --stacktrace
           
-      - name: Upload APK
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Keyboard-Final-App
+          name: Romantic-Keyboard-Final
           path: "**/build/outputs/apk/debug/*.apk"
-          
+
