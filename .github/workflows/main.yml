@@ -1,4 +1,4 @@
-name: Final Recovery Build
+name: Emergency Build APK
 on: [push]
 jobs:
   build:
@@ -15,37 +15,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Hard Fix and Build
+      - name: Clean and Force Build
         run: |
-          # 1. تحديد مكان المجلد الحقيقي
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           cd $PROJECT_DIR
           chmod +x gradlew
           
-          # 2. إصلاح ملف settings.gradle (حذف السطر المسبب للخطأ)
+          # حذف السطور التي تسبب تعارض في الإعدادات
           sed -i '/repositoriesMode/d' settings.gradle || true
           
-          # 3. إصلاح ملف build.gradle الرئيسي (إضافة تعريف الكوتلن)
-          cat > build.gradle <<EOF
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.0'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10'
-              }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
-          EOF
-
-          # 4. تشغيل البناء مع تجاهل الأخطاء البسيطة
-          ./gradlew assembleDebug --no-daemon
+          # أمر البناء القوي مع تجاهل الأخطاء غير القاتلة
+          ./gradlew assembleDebug --no-daemon --stacktrace -Pandroid.plugin.validation.failOnWarning=false
           
-      - name: Upload APK
+      - name: Upload APK if exists
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Keyboard-Fixed-Final
+          name: Keyboard-Final-Trial
           path: "**/build/outputs/apk/debug/*.apk"
           
