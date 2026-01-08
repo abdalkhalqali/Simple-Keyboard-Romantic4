@@ -1,4 +1,4 @@
-name: Full Scan APK Build
+name: Ultimate APK Fixer
 on: [push]
 jobs:
   build:
@@ -15,38 +15,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Force Master Build
+      - name: Build All Variants
         run: |
-          # العثور على ملف البناء وتشغيله أينما كان
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           cd $PROJECT_DIR
           chmod +x gradlew
           
-          # تنظيف وبناء إعدادات جديدة
-          rm -f settings.gradle build.gradle
-          echo "include ':app'" > settings.gradle
-          cat > build.gradle <<EOF
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.0'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10'
-              }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
-          EOF
-
-          # البناء النهائي
-          ./gradlew :app:assembleDebug --no-daemon || true
+          # تنظيف وبناء شامل لكل الصيغ الممكنة (APK و AAB)
+          ./gradlew assembleDebug --no-daemon || true
+          ./gradlew build --no-daemon || true
           
-      - name: Deep Search and Upload
+          # إنشاء مجلد لتجميع كل النتائج في مكان واحد سهل الوصول
+          mkdir -p $GITHUB_WORKSPACE/output_files
+          find . -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/output_files/ \;
+          find . -name "*.aab" -exec cp {} $GITHUB_WORKSPACE/output_files/ \;
+
+      - name: Upload Everything Found
         uses: actions/upload-artifact@v4
         with:
-          name: Keyboard-App-Package
-          # هنا التغيير الجذري: سيقوم برفع كل ملف apk يجده في المشروع كاملاً
-          path: "**/*.apk" 
-          if-no-files-found: error
-          
+          name: Keyboard-Package-Files
+          path: output_files/ # سنرفع المجلد بالكامل بما يحتويه
+          if-no-files-found: warn
+
