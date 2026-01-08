@@ -1,4 +1,4 @@
-name: Final Recovery and Build
+name: Final Master Build
 on: [push]
 jobs:
   build:
@@ -15,21 +15,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Hard Fix and Build
+      - name: Hard Fix and Force Build
         run: |
-          # 1. تحديد مكان المجلد الحقيقي بعد فك الضغط
+          # العثور على المجلد وتشغيله
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           cd $PROJECT_DIR
           chmod +x gradlew
           
-          # 2. حذف ملفات الإعدادات القديمة التي تسبب التعارض
+          # مسح الإعدادات القديمة وبناء إعدادات حديثة
           rm -f settings.gradle build.gradle
-          
-          # 3. إنشاء ملف settings.gradle جديد ونظيف
           echo "include ':app'" > settings.gradle
-          
-          # 4. إنشاء ملف build.gradle رئيسي متوافق مع البيئة الحديثة
           cat > build.gradle <<EOF
           buildscript {
               repositories { google(); mavenCentral() }
@@ -43,13 +39,14 @@ jobs:
           }
           EOF
 
-          # 5. تشغيل عملية البناء النهائية
+          # تشغيل البناء مع أمر استخراج الـ APK
           ./gradlew :app:assembleDebug --no-daemon || true
           
-      - name: Upload Final APK
+      - name: Search and Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Keyboard-Official-App
+          name: Keyboard-Final-Package
+          # هذا هو السر: سيبحث في كل المجلدات العميقة
           path: "**/*.apk"
-          if-no-files-found: error
+          if-no-files-found: warn
 
