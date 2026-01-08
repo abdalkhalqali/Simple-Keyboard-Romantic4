@@ -1,4 +1,4 @@
-name: Production Build APK
+name: Final Recovery Build
 on: [push]
 jobs:
   build:
@@ -14,25 +14,38 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
           
-      - name: Auto-Fix and Build
+      - name: Hard Fix and Build
         run: |
-          # البحث عن مجلد المشروع
+          # 1. تحديد مكان المجلد الحقيقي
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
-          chmod +x $GRADLEW_PATH
           cd $PROJECT_DIR
+          chmod +x gradlew
           
-          # حذف السطر الذي يسبب التعارض في الإعدادات تلقائياً
-          sed -i '/repositoriesMode.set/d' settings.gradle || true
+          # 2. إصلاح ملف settings.gradle (حذف السطر المسبب للخطأ)
+          sed -i '/repositoriesMode/d' settings.gradle || true
           
-          # تشغيل البناء النهائي
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          # 3. إصلاح ملف build.gradle الرئيسي (إضافة تعريف الكوتلن)
+          cat > build.gradle <<EOF
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.1.0'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10'
+              }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
+
+          # 4. تشغيل البناء مع تجاهل الأخطاء البسيطة
+          ./gradlew assembleDebug --no-daemon
           
-      - name: Upload Final APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Romantic-Keyboard-Final
+          name: Keyboard-Fixed-Final
           path: "**/build/outputs/apk/debug/*.apk"
-
+          
