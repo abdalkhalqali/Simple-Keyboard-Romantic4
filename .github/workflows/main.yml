@@ -1,4 +1,4 @@
-name: Ultimate APK Extraction
+name: Full Scan APK Build
 on: [push]
 jobs:
   build:
@@ -15,15 +15,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Force Build and Locate APK
+      - name: Force Master Build
         run: |
-          # العثور على المجلد وتشغيله
+          # العثور على ملف البناء وتشغيله أينما كان
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
           cd $PROJECT_DIR
           chmod +x gradlew
           
-          # مسح الإعدادات القديمة وبناء إعدادات نظيفة
+          # تنظيف وبناء إعدادات جديدة
           rm -f settings.gradle build.gradle
           echo "include ':app'" > settings.gradle
           cat > build.gradle <<EOF
@@ -39,15 +39,14 @@ jobs:
           }
           EOF
 
-          # تشغيل البناء
+          # البناء النهائي
           ./gradlew :app:assembleDebug --no-daemon || true
           
-          # السر هنا: سنبحث عن أي ملف APK تم إنتاجه وننقله للمجلد الرئيسي
-          find . -name "*.apk" -exec cp {} $GITHUB_WORKSPACE/myapp.apk \;
-          
-      - name: Upload APK
+      - name: Deep Search and Upload
         uses: actions/upload-artifact@v4
         with:
-          name: My-Keyboard-App
-          path: myapp.apk # سنرفع الملف الذي نقلناه للمجلد الرئيسي مباشرة
-
+          name: Keyboard-App-Package
+          # هنا التغيير الجذري: سيقوم برفع كل ملف apk يجده في المشروع كاملاً
+          path: "**/*.apk" 
+          if-no-files-found: error
+          
