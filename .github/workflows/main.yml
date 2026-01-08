@@ -1,4 +1,4 @@
-name: Absolute Final Build
+name: Debug and Extract Everything
 on: [push]
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Force Master Build
+      - name: Force Build
         run: |
           GRADLEW_PATH=$(find . -name gradlew | head -n 1)
           PROJECT_DIR=$(dirname $GRADLEW_PATH)
@@ -23,11 +23,11 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon || true
           
-      - name: Global APK Search and Upload
+      - name: Upload All Build Outputs
         uses: actions/upload-artifact@v4
         with:
-          name: My-Final-Keyboard
-          # السر هنا: النجمتين تعني ابحث في كل مكان مهما كان المجلد عميقاً
-          path: "**/*.apk"
-          if-no-files-found: error
-
+          name: Full-Build-Output
+          # هذا الأمر سيرفع كل مجلد المخرجات مهما كان نوع الملفات فيه
+          path: "**/build/outputs/"
+          if-no-files-found: warn
+          
